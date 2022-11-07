@@ -134,14 +134,13 @@ else
     ErrorLog "/var/log/httpd/$COMPANY.error_log"
     CustomLog "/var/log/httpd/$COMPANY.access_log" common
     
+<Directory /var/www/html/$COMPANY/public>
+    AllowOverride All
+    Order Allow,Deny
+    Allow from All
+</Directory>
 
-     <Directory /var/www/html/$COMPANY/public>
-        AllowOverride All
-        Order Allow,Deny
-        Allow from All
-     </Directory>
-
-    </VirtualHost>
+</VirtualHost>
     " >/etc/httpd/conf.d/$DNS.conf
 fi
 
