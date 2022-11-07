@@ -35,6 +35,7 @@ UNSC="_"                        # For Underscore
 DB_NAME_PREFIX="tenant_"
 DNS_SUFFIX="circlecrm.cloud"
 DB_PASS_DEF="PassW0rd!"
+DB_USER_DEF="suite_adm"
 # SUITECRM 
 SUITECRM_EXT_URL="https://suitecrm.com/download/128/suite82/561615/suitecrm-8-2-0-zip.zip"
 SUITECRM_FILE="suitecrm-8-2-0-zip.zip"
@@ -67,8 +68,9 @@ echo -en "$BWhite Please Enter SuiteCRM Databases Name                      :$BY
 read DB_NAME_LOWER
 
 
-echo -en "$BWhite Please Enter SuiteCRM Databases Username                  :$BYellow"$DB_NAME_PREFIX
+echo -en "$BWhite Please Enter SuiteCRM Databases Username    $BYellow(default $DB_USER_DEF:$BYellow"
 read DB_USER_LOWER
+DB_USER_LOWER="${DB_USER:-$DB_USER_DEF}"
 
 
 echo -en "$BWhite Please Enter SuiteCRM Databases Password $BYellow(default $DB_PASS_DEF):$BGreen"
@@ -101,7 +103,7 @@ echo -en "$BGreen \n Company Name                :$BYellow $COMPANY $Color_Off"
 echo -en "$BGreen \n SuiteCRM DNS Name           :$BYellow $DNS $Color_Off"
 # echo -en "$BGreen \n SuiteCRM Domain Name        :$BYellow $DOMAIN_NAME $Color_Off"
 echo -en "$BGreen \n SuiteCRM Databases Name     :$BYellow $DB_NAME $Color_Off"
-echo -en "$BGreen \n SuiteCRM Databases Username :$BYellow $DB_USER $Color_Off"
+echo -en "$BGreen \n SuiteCRM Databases Username :$BYellow $DB_USER_LOWER $Color_Off"
 echo -en "$BGreen \n SuiteCRM Databases Password :$BYellow $DB_PASSWD $Color_Off"
 echo -en "$BGreen \n SuiteCRM Admin Name         :$BYellow $ADMIN $Color_Off"
 echo -e "$BGreen \n SuiteCRM Admin Password     :$BYellow $ADMINPASS $Color_Off"
@@ -133,13 +135,11 @@ else
     ErrorLog "/var/log/httpd/$COMPANY.error_log"
     CustomLog "/var/log/httpd/$COMPANY.access_log" common
     
-
      <Directory /var/www/html/$COMPANY/public>
         AllowOverride All
         Order Allow,Deny
         Allow from All
      </Directory>
-
     </VirtualHost>
     " >/etc/httpd/conf.d/$DNS.conf
 fi
@@ -198,7 +198,6 @@ SuiteCRM_Admin_Details:
 SuiteCRM Link:http://$DNS
 SuiteCRM Admin User:$ADMIN 
 SuiteCRM Admin Pass:$ADMINPASS
-
 DataBases_Details:
 Databases Name:  $DB_NAME
 Database UserName:$DB_USER
@@ -252,4 +251,3 @@ sleep 2
 done
 
 ########################  END #####################################################
-
