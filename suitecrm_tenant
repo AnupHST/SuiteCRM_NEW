@@ -59,8 +59,7 @@ read COMPANY_LOWER
 
 echo -e "$BCyan-----------------------------Printing Databases ------------------------------------$Color_Off"
 sleep 2   
-# mysql -u root -e "SHOW DATABASES"  
-# mysql -u root -e "SHOW DATABASES LIKE 'tenant%';"                     
+                    
  
 ##################### Start Print Databases and Suggest ##################
 
@@ -68,7 +67,7 @@ db_list=$(mysql -u root -e "SHOW DATABASES LIKE 'tenant%';"  | grep -o 'tenant_[
 
 # echo $db_list
 
-
+   echo  -e "$BYellow TENANT ID": "COMPANY NAME $Color_Off"
 while IFS="  " read -r dbname
 do
 
@@ -77,7 +76,7 @@ do
 
    # here database name  $dbname inside $sys_name il valore (p.es. "tenant_1_company")
    # so stdout to the console
-
+   
    echo  -e "$BYellow $dbname": "$sys_name $Color_Off"
 
 done <<< "$db_list"
@@ -101,7 +100,7 @@ fi
 
 ##################### End Print Databases and Suggest ##################
 
-echo -en "$BWhite Please Enter SuiteCRM Databases Name                      :$BYellow"$DB_NAME_PREFIX
+echo -en "$BWhite Please Enter SuiteCRM Databases Name                      :$BYellow"tenant_$n_sugg
 read DB_NAME_LOWER
 
 
@@ -128,7 +127,7 @@ COMPANY=${COMPANY_LOWER,,}
 DB_NAME=${DB_NAME_LOWER,,}
 DB_USER=${DB_USER_LOWER,,}
 
-DB_NAME="$DB_NAME_PREFIX$DB_NAME" #####$UNSC$COMPANY"
+DB_NAME="tenant_$n_sugg" #$DB_NAME_PREFIX$DB_NAME" #####$UNSC$COMPANY"
 #DB_USER="$DB_USER"
 DNS="$COMPANY.$DNS_SUFFIX"
 
@@ -137,7 +136,6 @@ echo -e "$BCyan------------------------------- SUMMARY OF INSTALLATION ---------
 echo -en "$BGreen \n SuiteCRM Version            :$BYellow $SUITECRM_VER $Color_Off"
 echo -en "$BGreen \n Company Name                :$BYellow $COMPANY $Color_Off"
 echo -en "$BGreen \n SuiteCRM DNS Name           :$BYellow $DNS $Color_Off"
-# echo -en "$BGreen \n SuiteCRM Domain Name        :$BYellow $DOMAIN_NAME $Color_Off"
 echo -en "$BGreen \n SuiteCRM Databases Name     :$BYellow $DB_NAME $Color_Off"
 echo -en "$BGreen \n SuiteCRM Databases Username :$BYellow $DB_USER $Color_Off"
 echo -en "$BGreen \n SuiteCRM Databases Password :$BYellow $DB_PASSWD $Color_Off"
@@ -265,8 +263,11 @@ while true; do
       case $ssl in
             [yY][eE][sS]|[yY])
 echo -e "$BCyan------------------------ Installing Let's Encrypt for $DNS ----------------------$Color_Off"
-sleep 2                           
-                            certbot --apache -d $DNS
+sleep 2                          
+    echo -en "$BWhite Enter a valid e-mail for let's encrypt certificate: $BYellow"
+	read EMAIL_NAME
+
+                            certbot --apache -n --agree-tos -m "$EMAIL_NAME"-d $DNS
                             
                             
                               if [ -d $DIR ]; then
