@@ -268,7 +268,7 @@ sleep 2
     echo -en "$BWhite Enter a valid e-mail for let's encrypt certificate: $BYellow"
 	read EMAIL_NAME
 
-                            certbot --apache -n --agree-tos -m "$EMAIL_NAME"-d $DNS
+                            certbot --apache -n --agree-tos -m "$EMAIL_NAME" -d $DNS
                             
                             
                               if [ -d $DIR ]; then
