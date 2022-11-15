@@ -158,9 +158,39 @@ sleep 2
 
 FILE=/etc/httpd/conf.d/$DNS.conf     
 if [ -f $FILE ]; then
-   echo -e "$BRed File $DNS.conf already exists. Unable to create Vhost for the Domain $Color_Off" 1>&2 
+     
+     while true; do
+        echo -e "$BRed File $DNS.conf already exists. Unable to create Vhost for the Domain $Color_Off" 1>&2 
+        echo -en "$BWhite Do you want to overwrite the file  .....Yes/No : $BYellow"
+        
+        read overwrite
+        case $overwrite in
+        [yY][eE][sS]|[yY]) 
+   echo "<VirtualHost *:80>
+    ServerAdmin $COMPANY@$DNS_SUFFIX
+    DocumentRoot "/var/www/html/$COMPANY/public"
+    DirectoryIndex index.php index.php4 index.php5 index.htm index.html
+    ServerName $DNS
+    ErrorLog "/var/log/httpd/$COMPANY.error_log"
+    CustomLog "/var/log/httpd/$COMPANY.access_log" common
+    
+<Directory /var/www/html/$COMPANY/public>
+    AllowOverride All
+    Order Allow,Deny
+    Allow from All
+</Directory>
+
+</VirtualHost>
+    " >/etc/httpd/conf.d/$DNS.conf    
+        
+        break;;
+        [nN][oO]|[nN])  echo -en "$Color_Off"
+        exit;;
+        *) echo -e "$BYellow Wrong Input ! Please Answer Yes or No $Color_Off" 
+    esac
+done
+
    
-   exit 1
 else
    echo "<VirtualHost *:80>
     ServerAdmin $COMPANY@$DNS_SUFFIX
@@ -200,9 +230,10 @@ sleep 2
  fi
 
 
-echo -e "$BCyan---------------------------Installing SuiteCRM for $DOMAIN_NAME -------------------------$Color_Off"
+echo -e "$BCyan---------------------------Installing SuiteCRM for $DNS -------------------------$Color_Off"
 sleep 2   
     cd /var/www/html
+    rm -rf $COMPANY
     mkdir $COMPANY && cd $COMPANY
     wget -qc $SUITECRM_EXT_URL
     unzip $SUITECRM_FILE
@@ -268,7 +299,7 @@ sleep 2
     echo -en "$BWhite Enter a valid e-mail for let's encrypt certificate: $BYellow"
 	read EMAIL_NAME
 
-                            certbot --apache -n --agree-tos -m "$EMAIL_NAME" -d $DNS
+                        certbot --apache -n --agree-tos -m "$EMAIL_NAME" -d $DNS
                             
                             
                               if [ -d $DIR ]; then
