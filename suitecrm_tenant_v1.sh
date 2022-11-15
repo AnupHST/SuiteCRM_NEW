@@ -278,7 +278,7 @@ sudo chown -R apache:apache /var/www/html
 
 
         n|N|no|No|NO) echo -e "$Color_Off"
-        break;;
+        exit;;
  
         *) echo -e "$BYellow Wrong Input ! Please Answer Yes or No $Color_Off" 
  
