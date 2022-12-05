@@ -371,8 +371,8 @@ done
 case $READ_ONLY in
                 y|Y|yes|Yes|YES) 
 
-                    mysql -u root  -e "CREATE USER '$USER_READONLY'@'localhost' IDENTIFIED BY '$PASS_READONLY'";
-                    mysql -u root  -e "GRANT SELECT ON $DB_NAME.* TO '$USER_READONLY'@'localhost'";
+                    mysql -u root  -e "CREATE USER '$USER_READONLY'@'%' IDENTIFIED BY '$PASS_READONLY'";
+                    mysql -u root  -e "GRANT SELECT ON $DB_NAME.* TO '$USER_READONLY'@'%'";
                     mysql -u root  -e "FLUSH PRIVILEGES";
                     break;;
 
