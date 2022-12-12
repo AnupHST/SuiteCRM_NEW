@@ -66,6 +66,7 @@ sleep 2
 db_list=$(mysql -u root -e "SHOW DATABASES LIKE 'tenant%';"  | grep -o 'tenant_[^\s]\+' )
 
 # echo $db_list
+if [[ ${db_list} = true ]]; then
 
    echo  -e "$BYellow TENANT ID": "COMPANY NAME $Color_Off"
 while IFS="  " read -r dbname
@@ -80,7 +81,9 @@ do
    echo  -e "$BYellow $dbname": "$sys_name $Color_Off"
 
 done <<< "$db_list"
-
+else
+ echo -e "$BRed Sorry: no tenant databases found $Color_Off"
+fi
 # suggest empty tenant
 
 nsugg=''
