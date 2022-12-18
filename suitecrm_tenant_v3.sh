@@ -66,7 +66,7 @@ sleep 2
 db_list=$(mysql -u root -e "SHOW DATABASES LIKE 'tenant%';"  | grep -o 'tenant_[^\s]\+' )
 
 # echo $db_list
-if [[ ${db_list} = true ]]; then
+if [[ ${db_list} ]]; then
 
    echo  -e "$BYellow TENANT ID": "COMPANY NAME $Color_Off"
 while IFS="  " read -r dbname
