@@ -59,6 +59,7 @@ done
 echo -en "$BWhite \n Please Enter SuiteCRM Company Name                        :$BGreen"
 read COMPANY_LOWER
 
+
 echo -e "$BCyan-----------------------------Printing Databases ------------------------------------$Color_Off"
 sleep 2   
                     
@@ -163,6 +164,10 @@ done
 COMPANY=${COMPANY_LOWER,,}
 DB_NAME=${DB_NAME_LOWER,,}
 DB_USER=${DB_USER_LOWER,,}
+
+# Remove space 
+shopt -s extglob
+COMPANY="${COMPANY//+([[:space:]])/}"
 
 #DB_NAME="tenant_$n_sugg" #$DB_NAME_PREFIX$DB_NAME" #####$UNSC$COMPANY"
 #DB_USER="$DB_USER"
@@ -404,6 +409,9 @@ read_only_user (){
  mysql -u root  -e "CREATE USER '$USER_READONLY'@'%' IDENTIFIED BY '$PASS_READONLY'";
  mysql -u root  -e "GRANT SELECT ON $DB_NAME.* TO '$USER_READONLY'@'%'";
  mysql -u root  -e "FLUSH PRIVILEGES";
+ 
+ sudo firewall-cmd --permanent --add-port=3306/tcp
+ sudo firewall-cmd --reload
  break;;
 
  n|N|no|No|NO) echo -e "$Color_Off"
