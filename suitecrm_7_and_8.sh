@@ -1,8 +1,6 @@
 #!/bin/bash
-#  Written By Anoop Singh from https://www.hostingshades.com/
-
+#Written By Anoop Singh from https://www.hostingshades.com/
 #COLORS
-# Reset
 Color_Off='\033[0m'       # Text Reset
 
 # Bold
@@ -18,16 +16,19 @@ BWhite='\033[1;37m'       # White
 # Default Credentials
 ADMIN_DEF="admin"               # Defualt suitecrm admin user name
 ADMINPASS_DEF="admin@12345"     # Defualt suitecrm pass name
-Date=`date`                     # Current date
+Date=$(date)                    # Current date
 DB_NAME_PREFIX="tenant_"
 DNS_SUFFIX="circlecrm.cloud"
 DB_PASS_DEF="PassW0rd!"
 DB_USER_DEF="suite_adm"
+PASS_READONLY_DEF="Su1t32022!"                       # Default suitecrm user read-only pass name
 
 # Deafult value
+PING_DEFF="yes"
 SUITECRM_DEFF="1" # suitecrm 7
+LOG_FILE="/opt/$COMPANY"
 
-# SUITECRM 
+# SUITECRM Installation URL
 SUITECRM_EXT_URL_8="https://suitecrm.com/download/128/suite82/561615/suitecrm-8-2-0-zip.zip"
 SUITECRM_FILE_8="suitecrm-8-2-0-zip.zip"
 SUITECRM_VER_8="8.2.0"
@@ -40,161 +41,198 @@ SUITECRM_VER_7="7.12.8"
 # Check if running as root  
 if ! [ "$(id -u)" = 0 ]; then echo -e "$BRed This script must be run as sudo or root, try again..."; exit 1; fi
 
+choose_sutecrm_menu (){
 while true; do
-        echo -e "$BCyan------------------------ Please Select SuiteCRM Version ----------------------------$Color_Off"
-        echo -en "$BGreen       1. SuiteCRM 7      2. SuiteCRM 8     3.Cancel $BWhite[Deafult Is SuiteCRM 7]:$BYellow"
-        read SUITECRM
-        SUITECRM="${SUITECRM:-$SUITECRM_DEFF}"
-   case $SUITECRM in
-        1) break;;
-        2) break;;
-        3) echo -e "$Color_Off" 
-        exit;;
+     echo -e "$BCyan------------------------ Please Select SuiteCRM Version ----------------------------$Color_Off"
+     echo -en "$BGreen       1. SuiteCRM 7      2. SuiteCRM 8     3.Cancel $BWhite [Deafult Is SuiteCRM 7]:$BYellow"
+     read SUITECRM
+     SUITECRM="${SUITECRM:-$SUITECRM_DEFF}"
+    case $SUITECRM in
+        1) SUITECRM="SUITECRM_VER_7"; break;;
+        2) SUITECRM="SUITECRM_VER_8"; break;;
+        3) echo -e "$Color_Off"; exit;;
         *) echo -e "$BYellow Wrong Input ! Please Answer 1 ,2 or 3 $Color_Off" ;;
     esac
 
 done
-
-####### READING DATA FROM USER ######
-echo -en "$BWhite \n Please Enter SuiteCRM Company Name                        :$BGreen"
-read COMPANY_LOWER
-
-
-echo -e "$BCyan-----------------------------Printing Databases ------------------------------------$Color_Off"
-sleep 2   
-                    
  
-##################### Start Print Databases and Suggest ##################
+}
 
-db_list=$(mysql -u root -e "SHOW DATABASES LIKE 'tenant%';"  | grep -o 'tenant_[^\s]\+' )
+print_tenant (){
+ echo -e "$BCyan-----------------------------Printing Databases ------------------------------------$Color_Off"
+ db_list=$(mysql -u root -e "SHOW DATABASES LIKE 'tenant%';"  | grep -o 'tenant_[^\s]\+' )
 
-# echo $db_list
-
-  if [[ ${db_list} ]]; then
-
-    echo  -e "$BYellow TENANT ID": "COMPANY NAME $Color_Off"
-    while IFS="  " read -r dbname
-    do
-
-    sys_name=$(mysql -u root -e "USE $dbname; SELECT * from config WHERE category = 'system' and name ='name'; " \
+    if [[ ${db_list} ]]; then
+        echo  -e "$BYellow TENANT ID": "COMPANY NAME $Color_Off"
+        while IFS="  " read -r dbname
+        do
+        sys_name=$(mysql -u root -e "USE $dbname; SELECT * from config WHERE category = 'system' and name ='name'; " \
             | sed -n -e 's/system\s\+name\s\+\(\S\+\)/\1/p' )
+            echo  -e "$BYellow $dbname": "$sys_name $Color_Off"
+        done <<< "$db_list"
+     else
+            echo -e "$BWhite Sorry: no tenant databases found $Color_Off"
+    fi
 
-    # here database name  $dbname inside $sys_name il valore (p.es. "tenant_1_company")
-    # so stdout to the console
+ # suggest empty tenant
+ nsugg=''
+    for n in {1..100}
+    do
+    if ! echo "$db_list" | tr ' ' '\n' | grep -q -x tenant_$n ; then
+        n_sugg=$n
+        break
+    fi
+    done
+
+    if [ -z "$n_sugg" ]; then
+    echo -e "$BWhite Sorry: no space for new tenant $Color_Off"
+    else
+    echo -e "$BWhite Suggested new tenant: $BYellow tenant_$n_sugg $Color_Off"
+    fi
+    DB_NAME_LOWER_DEF="tenant_$n_sugg"
+}
+
+mysql_data () {
+    while true; do  
+        echo -en "$BWhite Please Enter SuiteCRM Databases Name              $BYellow[$DB_NAME_LOWER_DEF]:$BGreen"        #tenant_$n_sugg
+        read DB_NAME_LOWER
+        DB_NAME_LOWER="${DB_NAME_LOWER:-$DB_NAME_LOWER_DEF}"
+        DB_NAME=${DB_NAME_LOWER,,}
+        USER_READONLY_PREFIX_DEF="view_$DB_NAME"
+        
+        DB_RESULT=$(mysql -u root -e "SHOW DATABASES" | grep $DB_NAME)
+        if [[ ! ${DB_RESULT} ]]; then  break
+        else echo -e "$BYellow Databases $DB_NAME Already Exist  $Color_Off"; fi
+    done
+
+    while true; do
+        echo -en "$BWhite Please Enter SuiteCRM Databases Username $BYellow[default $DB_USER_DEF]:$BGreen"
+        read DB_USER_LOWER
+        DB_USER_LOWER="${DB_USER_LOWER:-$DB_USER_DEF}"
+        DB_USER=${DB_USER_LOWER,,}
+        
+        USER_RESULT=$(mysql -u root  -e "SELECT user FROM mysql.user" | grep $DB_USER;)
+        if [[ ! ${USER_RESULT} ]]; then  break
+        else echo -e "$BYellow The Databases User $DB_USER Already Exist  $Color_Off" ;fi
+    done
     
-    echo  -e "$BYellow $dbname": "$sys_name $Color_Off"
-
-    done <<< "$db_list"
-else
- echo -e "$BWhite Sorry: no tenant databases found $Color_Off"
-fi
-
-# suggest empty tenant
-
-nsugg=''
-for n in {1..100}
-do
-   if ! echo "$db_list" | tr ' ' '\n' | grep -q -x tenant_$n ; then
-      n_sugg=$n
-      break
-   fi
-done
-
-if [ -z "$n_sugg" ]; then
-   echo -e "$BWhite Sorry: no space for new tenant $Color_Off"
-else
-   echo -e "$BWhite Suggested new tenant: $BYellow tenant_$n_sugg $Color_Off"
-fi
-
-##################### End Print Databases and Suggest ##################
-DB_NAME_LOWER_DEF="tenant_$n_sugg"
-
-echo -en "$BWhite Please Enter SuiteCRM Databases Name              $BYellow[$DB_NAME_LOWER_DEF]:$BGreen"        #tenant_$n_sugg
-read DB_NAME_LOWER
-DB_NAME_LOWER="${DB_NAME_LOWER:-$DB_NAME_LOWER_DEF}"
+    echo -en "$BWhite Please Enter SuiteCRM Databases Password $BYellow[default $DB_PASS_DEF]:$BGreen"
+    read DB_PASSWD
+    DB_PASSWD="${DB_PASSWD:-$DB_PASS_DEF}" 
+}
 
 
-echo -en "$BWhite Please Enter SuiteCRM Databases Username $BYellow[default $DB_USER_DEF]:$BGreen"
-read DB_USER_LOWER
-DB_USER_LOWER="${DB_USER_LOWER:-$DB_USER_DEF}"
+# READING DATA FROM USER ######
 
-echo -en "$BWhite Please Enter SuiteCRM Databases Password $BYellow[default $DB_PASS_DEF]:$BGreen"
-read DB_PASSWD
-DB_PASSWD="${DB_PASSWD:-$DB_PASS_DEF}"
+company_name (){
+while true; do    
+echo -en "$BWhite \n Please Enter SuiteCRM Company Name                        :$BGreen"
+   read COMPANY_LOWER
+   COMPANY=${COMPANY_LOWER,,}
+   shopt -s extglob
+   COMPANY="${COMPANY//+([[:space:]])/}" 
+   DNS="$COMPANY.$DNS_SUFFIX"
+   LOG_FILE="/opt/$COMPANY"
+   
+   if [[ ! -z "$COMPANY_LOWER" ]]; then  break 
+   else  echo -e "$BYellow Company Name not be empty $Color_Off" ; fi
+done   
+}
 
-echo -en "$BWhite Please Enter SuiteCRM Admin Name             $BYellow[default $ADMIN_DEF]:$BGreen"
-read ADMIN
-ADMIN="${ADMIN:-$ADMIN_DEF}"
+ping_domain (){
+ while true; do
+   echo -en "$BWhite Do you want to ping $DNS $BYellow[Deafult Is Yes]: $BGreen"
+   read PING
+   PING="${PING:-$PING_DEFF}"
+   
+      case $PING in
+         [yY][eE][sS]|[yY]) 
+         
+            ping=$(ping -c 3 ${DNS})
+               if [[ ${ping} ]]; then echo -e "$BGreen $DNS is reachable successfully" ; break
+               else 
+               echo -e " $BYellow $DNS is unreachable "
+                 company_name
+               fi
+               
+           
+         echo  -e "$Color_Off" ;; 
+         [nN][oO]|[nN])  break;;
+          *) echo -e "$BYellow Wrong Input ! Please Answer Yes or No $Color_Off" 
+      esac
+  done 
+}
 
-echo -en "$BWhite Please Enter SuiteCRM Admin Password$BYellow   [default $ADMINPASS_DEF]:$BGreen"
-read ADMINPASS
-ADMINPASS="${ADMINPASS:-$ADMINPASS_DEF}"
-echo -e "$Color_Off"
+read_data_from_user (){
+    echo -en "$BWhite Please Enter SuiteCRM Admin Name             $BYellow[default $ADMIN_DEF]:$BGreen"
+    read ADMIN
+    ADMIN="${ADMIN:-$ADMIN_DEF}"
 
-################ SUITECRM SCRIPT CREATION - READ_ONLY USER
-USER_READONLY_PREFIX_DEF="view_$DB_NAME_LOWER_DEF"   # Default suitecrm user read-only name
-PASS_READONLY_DEF="Su1t32022!"                       # Default suitecrm user read-only pass name
-while true; 
-do
- echo -en "$BWhite Do you want create a read only user for this tenant?   ..... Y/N: $BGreen"
- read READ_ONLY
+    echo -en "$BWhite Please Enter SuiteCRM Admin Password$BYellow   [default $ADMINPASS_DEF]:$BGreen"
+    read ADMINPASS
+    ADMINPASS="${ADMINPASS:-$ADMINPASS_DEF}"
+    echo -e "$Color_Off"
+}
 
-    case $READ_ONLY in
-            y|Y|yes|Yes|YES) 
-            echo -en "$BWhite Please Enter Tenant Read Only Username $BYellow[default $USER_READONLY_PREFIX_DEF]:$BGreen"
-            read USER_READONLY
-            USER_READONLY="${USER_READONLY:-$USER_READONLY_PREFIX_DEF}"
+databases_user_read_only_checking (){
+ USER_RESULT1=$(mysql -u root  -e "SELECT user FROM mysql.user" | grep $USER_READONLY;)
+ if [[ ! ${USER_RESULT1} ]]; then  break 
+ else  echo -e "$BYellow The Databases User $USER_READONLY Already Exist  $Color_Off" ; fi
+}
 
-            echo -en "$BWhite Please Enter Tenant Read-only Password $BYellow[default $PASS_READONLY_DEF]:$BGreen"
-            read PASS_READONLY
-            PASS_READONLY="${PASS_READONLY:-$PASS_READONLY_DEF}"
 
-            break;;
+read_only_user_promot () {
+    while true; 
+    do
+    echo -en "$BWhite Do you want create a read only user for this tenant?   ..... Y/N: $BGreen"
+    read READ_ONLY
 
-            n|N|no|No|NO) echo -e "$Color_Off"
-            break;;
-    
-            *) echo -e "$BYellow Wrong Input ! Please Answer Yes or No $Color_Off" 
-    
-    esac
-done
-####################
+        case $READ_ONLY in
+             y|Y|yes|Yes|YES) 
+                while true; do
+                    echo -en "$BWhite Please Enter Read Only Tenant Username $BYellow[default $USER_READONLY_PREFIX_DEF]:$BGreen"
+                    read USER_READONLY
+                    USER_READONLY="${USER_READONLY:-$USER_READONLY_PREFIX_DEF}"
+                
+                    echo -en "$BWhite Please Enter Read-only Tenant Password $BYellow[default $PASS_READONLY_DEF]:$BGreen"
+                    read PASS_READONLY
+                    PASS_READONLY="${PASS_READONLY:-$PASS_READONLY_DEF}"
+                    databases_user_read_only_checking
+                done
+                break;;
+             n|N|no|No|NO) echo -e "$Color_Off"
+                break;;
+        
+             *) echo -e "$BYellow Wrong Input ! Please Answer Yes or No $Color_Off" 
+        
+        esac
+        
+    done
+}
 
-# LOWERCASE
-COMPANY=${COMPANY_LOWER,,}
-DB_NAME=${DB_NAME_LOWER,,}
-DB_USER=${DB_USER_LOWER,,}
+summary_of_installation (){
+ if [[ ${SUITECRM} == "SUITECRM_VER_7" ]]; then SUITECRM_VER="7.12.8"; else SUITECRM_VER="8.2.0"; fi
+ echo -e "$BCyan------------------------------- SUMMARY OF INSTALLATION ---------------------------------$Color_Off"
 
-# Remove space 
-shopt -s extglob
-COMPANY="${COMPANY//+([[:space:]])/}"
+ echo -en "$BGreen \n SuiteCRM Version            :$BYellow $SUITECRM_VER $Color_Off"
+ echo -en "$BGreen \n Company Name                :$BYellow $COMPANY $Color_Off"
+ echo -en "$BGreen \n SuiteCRM DNS Name           :$BYellow $DNS $Color_Off"
+ echo -en "$BGreen \n SuiteCRM Databases Name     :$BYellow $DB_NAME $Color_Off"
+ echo -en "$BGreen \n SuiteCRM Databases Username :$BYellow $DB_USER $Color_Off"
+ echo -en "$BGreen \n SuiteCRM Databases Password :$BYellow $DB_PASSWD $Color_Off"
+ echo -en "$BGreen \n SuiteCRM Admin Name         :$BYellow $ADMIN $Color_Off"
+ echo -en "$BGreen \n SuiteCRM Admin Password     :$BYellow $ADMINPASS $Color_Off"
+}
 
-#DB_NAME="tenant_$n_sugg" #$DB_NAME_PREFIX$DB_NAME" #####$UNSC$COMPANY"
-#DB_USER="$DB_USER"
-DNS="$COMPANY.$DNS_SUFFIX"
-if [[ ${SUITECRM} == "1" ]]; then SUITECRM_VER="7.12.8"; else SUITECRM_VER="8.2.0"; fi
-
-echo -e "$BCyan------------------------------- SUMMARY OF INSTALLATION ---------------------------------$Color_Off"
-
-echo -en "$BGreen \n SuiteCRM Version            :$BYellow $SUITECRM_VER $Color_Off"
-echo -en "$BGreen \n Company Name                :$BYellow $COMPANY $Color_Off"
-echo -en "$BGreen \n SuiteCRM DNS Name           :$BYellow $DNS $Color_Off"
-echo -en "$BGreen \n SuiteCRM Databases Name     :$BYellow $DB_NAME $Color_Off"
-echo -en "$BGreen \n SuiteCRM Databases Username :$BYellow $DB_USER $Color_Off"
-echo -en "$BGreen \n SuiteCRM Databases Password :$BYellow $DB_PASSWD $Color_Off"
-echo -en "$BGreen \n SuiteCRM Admin Name         :$BYellow $ADMIN $Color_Off"
-echo -en "$BGreen \n SuiteCRM Admin Password     :$BYellow $ADMINPASS $Color_Off"
-case $READ_ONLY in
-        y|Y|yes|Yes|YES) 
-echo -en "$BGreen \n Tenant Read Only Username   :$BYellow $USER_READONLY $Color_Off"
-echo -en "$BGreen \n Tenant Read-only Password :$BYellow $PASS_READONLY $Color_Off"
-echo -e "$Color_Off"
-break ;;
-
-n|N|no|No|NO) echo -e "$Color_Off"
-        break;;
-esac
-
+read_only_user_print (){
+ case $READ_ONLY in
+   y|Y|yes|Yes|YES) 
+    echo -en "$BGreen \n Tenant Read Only Username   :$BYellow $USER_READONLY $Color_Off"
+    echo -en "$BGreen \n Tenant Read-only Password :$BYellow $PASS_READONLY $Color_Off"
+    echo -e "$Color_Off"; break ;;
+   n|N|no|No|NO) echo -e "$Color_Off" ; break;;
+ esac
+}
 
 
 vhost7 (){
@@ -238,11 +276,11 @@ vhost8 (){
 }
 
 vhost_if_else (){
-    if [[ ${SUITECRM} == "1" ]]; then vhost7; else vhost8; fi
+    if [[ ${SUITECRM} == "SUITECRM_VER_7" ]]; then vhost7; else vhost8; fi
 }
 
 remove_vhost (){
-rm -rvf /etc/httpd/conf.d/$DNS*
+rm -rvf /etc/httpd/conf.d/$DNS* > /dev/null
 }
 
 creating_vhost (){
@@ -269,20 +307,13 @@ if [ -f $FILE ]; then
 
 mysql_installation (){
 echo -e "$BCyan------------------------ Creating Databases and User for SuiteCRM -----------------------$Color_Off"
-sleep 2
-    RESULT=`mysql -u root -e "SHOW DATABASES" | grep $DB_NAME`
- if [ "$RESULT" == "$DB_NAME" ]; then
-    mysqldump -u root $DB_NAME > "/root/db-$DB_NAME-$(date +%s).sql"
- fi
-
-echo -e "$BYellow The Database Name $DB_NAME Has Been Created Successfully! $Color_Off"
-mysql -u root  -e "DROP DATABASE IF EXISTS $DB_NAME;"
 mysql -u root  -e "CREATE DATABASE $DB_NAME";
 mysql -u root  -e "CREATE USER '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASSWD'";
 mysql -u root  -e "GRANT ALL PRIVILEGES ON $DB_NAME.* TO '$DB_USER'@'localhost'";
 mysql -u root  -e "FLUSH PRIVILEGES";
+echo -e "$BYellow The Database Name $DB_NAME Has Been Created Successfully! $Color_Off"
 
-}
+} 
 
 suitecrm_8_file_downloading (){
     echo -e "$BCyan---------------------------Installing SuiteCRM for $DNS -------------------------$Color_Off"
@@ -291,14 +322,14 @@ cd /opt
 rm -rf $COMPANY > /dev/null
 mkdir $COMPANY && cd $COMPANY
 wget -qc $SUITECRM_EXT_URL_8
-unzip $SUITECRM_FILE_8 > suite-unzip.log
+unzip $SUITECRM_FILE_8 > $LOG_FILE/suite-unzip.log
 
 find . -type d -not -perm 2755 -exec chmod 2755 {} \;
 find . -type f -not -perm 0644 -exec chmod 0644 {} \;
 find . ! -user apache -exec chown apache:apache {} \;
 chmod +x bin/console
 service httpd restart > /dev/null
-rm -rvf $SUITECRM_FILE_8
+rm -rvf $SUITECRM_FILE_8 > /dev/null
 }
 
 suitecrm_7_file_downloading (){
@@ -307,7 +338,7 @@ sleep 2
     cd /opt
     rm -rf $COMPANY > /dev/null
     wget -qc $SUITECRM_EXT_URL_7
-    unzip $SUITECRM_FILE_7 > suite-unzip.log
+    unzip $SUITECRM_FILE_7 > $LOG_FILE/suite-unzip.log
     
     mv $SUITECRM_DIR $COMPANY
     cd $COMPANY
@@ -338,13 +369,17 @@ suitecrm7_installation_instruction (){
 suitecrm8_silent_install (){
 echo -e "$BCyan---------------------------SuiteCRM Silent Install -------------------------$Color_Off"
 cd /opt/$COMPANY
-./bin/console suitecrm:app:install -u "$ADMIN" -p "$ADMINPASS" -U "$DB_USER" -P "$DB_PASSWD" -H "localhost" -N "$DB_NAME" -S "https://$DNS" -d "yes" > suitecrmdatabases.log
+./bin/console suitecrm:app:install -u "$ADMIN" -p "$ADMINPASS" -U "$DB_USER" -P "$DB_PASSWD" -H "localhost" -N "$DB_NAME" -S "https://$DNS" -d "yes" > $LOG_FILE/suitecrm8_silent_install.log
 ln -sf -T /opt/$COMPANY /var/www/html/$COMPANY
  cd /var/www/html/$COMPANY
  find . -type d -not -perm 2755 -exec chmod 2755 {} \;
  find . -type f -not -perm 0644 -exec chmod 0644 {} \;
  find . ! -user apache -exec chown apache:apache {} \;
  sudo chown -R apache:apache /var/www/html
+}
+
+choose_sutecrm (){
+    if [[ ${SUITECRM} == "SUITECRM_VER_7" ]]; then suitecrm_7_file_downloading; suitecrm7_installation_instruction; else suitecrm_8_file_downloading; suitecrm8_silent_install; fi
 }
 
 print_details (){
@@ -375,18 +410,27 @@ ssl_cheking (){
     else echo -e "$BRed  SSL installation has been failed $Color_Off"; fi
 }
 
-letsencrypt_install (){
+letsencrypt_asking (){
 while true; do
  echo -en "$BWhite Do you want to install SSL ? Yes or No ...: $BGreen"
  read ssl
     case $ssl in
+     [yY][eE][sS]|[yY]) break ;;
+     [nN][oO]|[nN]) echo -e "$Color_Off"
+     break;;
+     *) echo -e "$BYellow Wrong Input ! Please Answer Yes or No $Color_Off" 
+    esac 
+done
+
+}
+
+letsencrypt_install (){
+while true; do    
+    case $ssl in
      [yY][eE][sS]|[yY])
      echo -e "$BCyan------------------------ Installing Let's Encrypt for $DNS ----------------------$Color_Off"
      sleep 2                          
-     echo -en "$BWhite Enter a valid e-mail for let's encrypt certificate: $BYellow"
-	 read EMAIL_NAME
-     echo -e "$Color_Off"
-     certbot --apache -n --agree-tos -m "$EMAIL_NAME" -d $DNS
+     certbot --apache -n --agree-tos -m "$EMAIL_NAME" -d $DNS > $LOG_FILE/letsencrypt.log
      ssl_cheking ;;
      [nN][oO]|[nN]) echo -e "$Color_Off"
      break;;
@@ -420,11 +464,6 @@ esac
 
 }
 
-#.3..##### Installing SuiteCRM.....
-choose_sutecrm (){
-    if [[ ${SUITECRM} == "1" ]]; then suitecrm_7_file_downloading; suitecrm7_installation_instruction; else suitecrm_8_file_downloading; suitecrm8_silent_install; fi
-}
-
 suitecrm_installation (){
 while true; 
 do
@@ -440,7 +479,19 @@ done
 
 }
 
+# Running Funcation
+
+choose_sutecrm_menu
+company_name
+ping_domain
+print_tenant
+mysql_data
+read_data_from_user
+read_only_user_promot
+letsencrypt_asking
+summary_of_installation
+read_only_user_print
+
 suitecrm_installation
 letsencrypt_install
 read_only_user
-
