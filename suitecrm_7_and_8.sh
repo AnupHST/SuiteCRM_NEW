@@ -105,17 +105,12 @@ mysql_data () {
         else echo -e "$BYellow Databases $DB_NAME Already Exist  $Color_Off"; fi
     done
 
-    while true; do
+    
         echo -en "$BWhite Please Enter SuiteCRM Databases Username $BYellow[default $DB_USER_DEF]:$BGreen"
         read DB_USER_LOWER
         DB_USER_LOWER="${DB_USER_LOWER:-$DB_USER_DEF}"
         DB_USER=${DB_USER_LOWER,,}
         
-        USER_RESULT=$(mysql -u root  -e "SELECT user FROM mysql.user" | grep $DB_USER;)
-        if [[ ! ${USER_RESULT} ]]; then  break
-        else echo -e "$BYellow The Databases User $DB_USER Already Exist  $Color_Off" ;fi
-    done
-    
     echo -en "$BWhite Please Enter SuiteCRM Databases Password $BYellow[default $DB_PASS_DEF]:$BGreen"
     read DB_PASSWD
     DB_PASSWD="${DB_PASSWD:-$DB_PASS_DEF}" 
