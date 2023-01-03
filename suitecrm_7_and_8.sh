@@ -382,7 +382,7 @@ print_details (){
     echo -en "$BGreen \n SuiteCRM Admin User                :$BYellow $ADMIN $Color_Off"
     echo -en "$BGreen \n SuiteCRM Admin Pass                :$BYellow $ADMINPASS $Color_Off"
 
-echo -e "$BGreen \n SuiteCRM And Databases Details Have been Stored In $BYellow /var/www/html/$DNS.txt $Color_Off"
+echo -e "$BGreen \n SuiteCRM And Databases Details Have been Stored In $BYellow ${LOG_FILE}${DNS}.txt $Color_Off"
 
 echo "Creaction Date is: $Date
 SuiteCRM_Admin_Details:
@@ -394,7 +394,7 @@ DataBases_Details:
 Databases Name:  $DB_NAME
 Database UserName:$DB_USER
 Database Password:$DB_PASSWD
-" >/var/www/html/$DNS.txt
+" >${LOG_FILE}${DNS}.txt
 sudo chown -R apache:apache /var/www/html
 
 }
