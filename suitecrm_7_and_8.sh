@@ -414,12 +414,21 @@ ssl_cheking (){
     else echo -e "$BRed  SSL installation has been failed $Color_Off"; fi
 }
 
+LETSENCRYPT_MSG (){
+    echo -en "$BYellow \n Please Check A Record For    :$BYellow $DNS $Color_Off"
+    echo -en "$BYellow \n Please Check WAN Firewall Ports (HTTP/HTTPS) $Color_Off"
+    echo -e "$Color_Off"
+    
+}
+
 letsencrypt_asking (){
 while true; do
  echo -en "$BWhite Do you want to install SSL ? Yes or No ...: $BGreen"
  read ssl
     case $ssl in
-     [yY][eE][sS]|[yY]) break ;;
+     [yY][eE][sS]|[yY]) LETSENCRYPT_MSG; sleep 5 ;
+     read -p "$(echo -e $BYellow Check Firewall Settings and DNS Configuration. Press any key to Resume ...$Color_Off)"
+      break ;;
      [nN][oO]|[nN]) echo -e "$Color_Off"
      break;;
      *) echo -e "$BYellow Wrong Input ! Please Answer Yes or No $Color_Off" 
@@ -435,7 +444,9 @@ while true; do
      echo -e "$BCyan------------------------ Installing Let's Encrypt for $DNS ----------------------$Color_Off"
      sleep 2                          
      certbot --apache -n --agree-tos -m "$EMAIL_NAME" -d $DNS 
-     ssl_cheking;letsencrypt_asking ;;
+     ssl_cheking; LETSENCRYPT_MSG; 
+     read -p "Check Firewall settings and DNS configuration. Press any key to resume ..." 
+     sleep 2 ; letsencrypt_asking ;;
      [nN][oO]|[nN]) echo -e "$Color_Off"
      break;;
     
