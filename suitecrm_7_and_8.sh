@@ -445,7 +445,7 @@ while true; do
      sleep 2                          
      certbot --apache -n --agree-tos -m "$EMAIL_NAME" -d $DNS 
      ssl_cheking; LETSENCRYPT_MSG; 
-     read -p "Check Firewall settings and DNS configuration. Press any key to resume ..." 
+     read -p "$(echo -e $BYellow Check Firewall Settings and DNS Configuration. Press any key to Resume ...$Color_Off)"
      sleep 2 ; letsencrypt_asking ;;
      [nN][oO]|[nN]) echo -e "$Color_Off"
      break;;
