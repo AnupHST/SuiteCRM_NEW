@@ -341,9 +341,10 @@ sleep 2
     cd /opt
     rm -rf $COMPANY > /dev/null
     wget -qc $SUITECRM_EXT_URL_7
-    unzip $SUITECRM_FILE_7 > $LOG_FILE/suite-unzip.log
+    unzip $SUITECRM_FILE_7 > suite-unzip.log
     
     mv $SUITECRM_DIR $COMPANY
+    mv suite-unzip.log $COMPANY/
     cd $COMPANY
     
     find . -type d -not -perm 2755 -exec chmod 2755 {} \;
