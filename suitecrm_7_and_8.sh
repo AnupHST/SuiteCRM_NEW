@@ -426,7 +426,7 @@ while true; do
      echo -e "$BCyan------------------------ Installing Let's Encrypt for $DNS ----------------------$Color_Off"
      sleep 2                          
      certbot --apache -n --agree-tos -m "$EMAIL_NAME" -d $DNS 
-     ssl_cheking ;;
+     ssl_cheking;letsencrypt_asking ;;
      [nN][oO]|[nN]) echo -e "$Color_Off"
      break;;
     
