@@ -17,7 +17,6 @@ BWhite='\033[1;37m'       # White
 ADMIN_DEF="admin"               # Defualt suitecrm admin user name
 ADMINPASS_DEF="admin@12345"     # Defualt suitecrm pass name
 Date=$(date)                    # Current date
-DB_NAME_PREFIX="tenant_"
 DNS_SUFFIX="circlecrm.cloud"
 DB_PASS_DEF="PassW0rd!"
 DB_USER_DEF="suite_adm"
@@ -487,7 +486,7 @@ do
     echo -en "$BWhite \n Do You Want Install SuiteCRM  ..... Y/N: $BGreen"
     read SUITECRM_CONFIRMATION
     case $SUITECRM_CONFIRMATION in
-        [yY][eE][sS]|[yY]) creating_vhost; mysql_installation; choose_sutecrm; print_details; letsencrypt_install; print_details; break;;
+        [yY][eE][sS]|[yY]) creating_vhost; mysql_installation; choose_sutecrm; print_details; letsencrypt_install; summary_of_installation; break;;
         [nN][oO]|[nN]) echo -e "$Color_Off"; exit;;
         *) echo -e "$BYellow Wrong Input ! Please Answer Yes or No $Color_Off" 
     
@@ -508,7 +507,5 @@ read_only_user_promot
 letsencrypt_asking
 summary_of_installation
 read_only_user_print
-
 suitecrm_installation
-#letsencrypt_install
 read_only_user
