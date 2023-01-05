@@ -303,15 +303,9 @@ if [ -f $FILE ]; then
 mysql_installation (){
 echo -e "$BCyan------------------------ Creating Databases and User for SuiteCRM -----------------------$Color_Off"
 
-MY_USER_RESULT=$(mysql -u root  -e "SELECT user FROM mysql.user" | grep $DB_USER;)
- if [[ ${MY_USER_RESULT} ]]; then
-   echo -e "$Color_Off"
- else  
- mysql -u root  -e "CREATE USER '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASSWD'";  
- fi
-
+ 
 mysql -u root  -e "CREATE DATABASE $DB_NAME";
-
+mysql -u root  -e "CREATE USER '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASSWD'";
 mysql -u root  -e "GRANT ALL PRIVILEGES ON $DB_NAME.* TO '$DB_USER'@'localhost'";
 mysql -u root  -e "FLUSH PRIVILEGES";
 echo -e "$BYellow The Database Name $DB_NAME Has Been Created Successfully! $Color_Off"
