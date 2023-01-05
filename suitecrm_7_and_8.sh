@@ -422,7 +422,7 @@ while true; do
     case $ssl in
      [yY][eE][sS]|[yY]) LETSENCRYPT_MSG; sleep 5 ;
      while true;do
-        echo -en "$BGreen Enter a valid e-mail for let's encrypt certificate: $BYellow"
+        echo -en "$BWhite Enter a valid e-mail for let's encrypt certificate: $BYellow"
         read EMAIL_NAME
 
         if [[ ! -z "$EMAIL_NAME" ]]; then  break 
