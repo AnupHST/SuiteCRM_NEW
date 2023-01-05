@@ -427,7 +427,7 @@ while true; do
  read ssl
     case $ssl in
      [yY][eE][sS]|[yY]) LETSENCRYPT_MSG; sleep 5 ;
-     read -p "$(echo -e $BYellow Check Firewall Settings and DNS Configuration. Press any key to Resume ...$Color_Off)"
+     #read -p "$(echo -e $BYellow Check Firewall Settings and DNS Configuration. Press any key to Resume ...$Color_Off)"
       break ;;
      [nN][oO]|[nN]) echo -e "$Color_Off"
      break;;
