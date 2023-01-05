@@ -487,7 +487,7 @@ do
     echo -en "$BWhite \n Do You Want Install SuiteCRM  ..... Y/N: $BGreen"
     read SUITECRM_CONFIRMATION
     case $SUITECRM_CONFIRMATION in
-        [yY][eE][sS]|[yY]) creating_vhost; mysql_installation; choose_sutecrm; print_details; break;;
+        [yY][eE][sS]|[yY]) creating_vhost; mysql_installation; choose_sutecrm; print_details; letsencrypt_install; print_details; break;;
         [nN][oO]|[nN]) echo -e "$Color_Off"; exit;;
         *) echo -e "$BYellow Wrong Input ! Please Answer Yes or No $Color_Off" 
     
@@ -510,5 +510,5 @@ summary_of_installation
 read_only_user_print
 
 suitecrm_installation
-letsencrypt_install
+#letsencrypt_install
 read_only_user
