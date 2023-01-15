@@ -25,7 +25,9 @@ PASS_READONLY_DEF="Su1t32022!"                       # Default suitecrm user rea
 # Deafult value
 PING_DEFF="yes"
 SUITECRM_DEFF="1" # suitecrm 7
-LOG_FILE="/opt/$COMPANY"
+LOG_FILE="/opt/crm/$COMPANY"
+INSTALL_SUITE="/opt/crm"
+
 
 # SUITECRM Installation URL
 SUITECRM_EXT_URL_8="https://suitecrm.com/download/128/suite82/561615/suitecrm-8-2-0-zip.zip"
@@ -39,6 +41,9 @@ SUITECRM_VER_7="7.12.8"
 
 # Check if running as root  
 if ! [ "$(id -u)" = 0 ]; then echo -e "$BRed This script must be run as sudo or root, try again..."; exit 1; fi
+if ! [[ -d $INSTALL_SUITE ]]; then mkdir -p /opt/crm ; fi
+
+
 
 choose_sutecrm_menu (){
 while true; do
@@ -126,7 +131,7 @@ echo -en "$BWhite \n Please Enter SuiteCRM Company Name                        :
    shopt -s extglob
    COMPANY="${COMPANY//+([[:space:]])/}" 
    DNS="$COMPANY.$DNS_SUFFIX"
-   LOG_FILE="/opt/$COMPANY"
+   LOG_FILE="/opt/crm/$COMPANY"
    
    if [[ ! -z "$COMPANY_LOWER" ]]; then  break 
    else  echo -e "$BYellow Company Name not be empty $Color_Off" ; fi
@@ -314,7 +319,7 @@ echo -e "$BYellow The Database Name $DB_NAME Has Been Created Successfully! $Col
 suitecrm_8_file_downloading (){
     echo -e "$BCyan---------------------------Installing SuiteCRM for $DNS -------------------------$Color_Off"
 sleep 2   
-cd /opt
+cd $INSTALL_SUITE
 rm -rf $COMPANY > /dev/null
 mkdir $COMPANY && cd $COMPANY
 wget -qc $SUITECRM_EXT_URL_8
@@ -331,7 +336,7 @@ rm -rvf $SUITECRM_FILE_8 > /dev/null
 suitecrm_7_file_downloading (){
     echo -e "$BCyan---------------------------Installing SuiteCRM for $DNS -------------------------$Color_Off"
 sleep 2   
-    cd /opt
+    cd $INSTALL_SUITE
     rm -rf $COMPANY > /dev/null
     wget -qc $SUITECRM_EXT_URL_7
     unzip $SUITECRM_FILE_7 > suite-unzip.log
@@ -345,10 +350,10 @@ sleep 2
     find . ! -user apache -exec chown apache:apache {} \;
     chmod -R 775 cache custom modules themes data upload
     chmod 775 config_override.php 2>/dev/null
-    ln -sf -T /opt/$COMPANY /var/www/html/$COMPANY
+    ln -sf -T $INSTALL_SUITE/$COMPANY /var/www/html/$COMPANY
     sudo chown -R apache:apache /var/www/html
     service httpd restart > /dev/null
-    rm -rvf /opt/$SUITECRM_FILE_7 > /dev/null
+    rm -rvf $INSTALL_SUITE/$SUITECRM_FILE_7 > /dev/null
 }
 
 suitecrm7_installation_instruction (){
@@ -365,9 +370,9 @@ suitecrm7_installation_instruction (){
 
 suitecrm8_silent_install (){
 echo -e "$BCyan---------------------------SuiteCRM Silent Install -------------------------$Color_Off"
-cd /opt/$COMPANY
+cd $INSTALL_SUITE/$COMPANY
 ./bin/console suitecrm:app:install -u "$ADMIN" -p "$ADMINPASS" -U "$DB_USER" -P "$DB_PASSWD" -H "localhost" -N "$DB_NAME" -S "https://$DNS" -d "yes" > $LOG_FILE/suitecrm8_silent_install.log
-ln -sf -T /opt/$COMPANY /var/www/html/$COMPANY
+ln -sf -T $INSTALL_SUITE/$COMPANY /var/www/html/$COMPANY
  cd /var/www/html/$COMPANY
  find . -type d -not -perm 2755 -exec chmod 2755 {} \;
  find . -type f -not -perm 0644 -exec chmod 0644 {} \;
@@ -385,7 +390,7 @@ print_details (){
     echo -en "$BGreen \n SuiteCRM Admin Pass                :$BYellow $ADMINPASS $Color_Off"
 
 echo -e "$BGreen \n SuiteCRM And Databases Details Have been Stored In $BYellow ${LOG_FILE}/SuiteCRM/${DNS}.txt $Color_Off"
-mkdir ${LOG_FILE}/SuiteCRM
+mkdir -p ${LOG_FILE}/SuiteCRM
 echo "Creaction Date is: $Date
 SuiteCRM_Admin_Details:
 SuiteCRM Link:http://$DNS
@@ -509,3 +514,8 @@ summary_of_installation
 read_only_user_print
 suitecrm_installation
 read_only_user
+
+
+
+
+ 
